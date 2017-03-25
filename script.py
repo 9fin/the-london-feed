@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO, Namespace, emit
+from flask_cors import CORS
 import json
 import random
 import os
@@ -12,6 +13,7 @@ DEBUG = True if os.environ.get('DEBUG', False) else False
 async_mode = None
 
 app = Flask(__name__)
+CORS(app)
 app.config['SECRET_KEY'] = SECRET_KEY
 socketio = SocketIO(app, async_mode=async_mode)
 
