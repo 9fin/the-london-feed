@@ -198,4 +198,4 @@ if __name__ == "__main__":
     handler.setFormatter(formatter)
     app.logger.addHandler(handler)
     app.logger.setLevel(logging.INFO)
-    socketio.run(app, host='0.0.0.0', port=8000, debug=DEBUG)
+    socketio.run(app, debug=DEBUG)

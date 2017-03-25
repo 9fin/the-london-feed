@@ -1,1 +1,1 @@
-web: python script.py
+web: web: gunicorn -k eventlet script:app
