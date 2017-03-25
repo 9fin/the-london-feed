@@ -7,7 +7,7 @@ import logging
 import sys
 
 SECRET_KEY = os.environ.get('APP_SECRET_KEY', 'not-the-actual-key-in-prod')
-DEBUG = os.environ.get('DEBUG', False)
+DEBUG = True if os.environ.get('DEBUG', False) else False
 
 async_mode = None
 
