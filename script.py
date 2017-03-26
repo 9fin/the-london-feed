@@ -15,7 +15,7 @@ async_mode = None
 app = Flask(__name__)
 CORS(app)
 app.config['SECRET_KEY'] = SECRET_KEY
-socketio = SocketIO(app, async_mode=async_mode)
+socketio = SocketIO(app, async_mode=async_mode, engineio_logger=True)
 
 # data arrays
 travel_arr = []
@@ -196,8 +196,8 @@ def star():
 if __name__ == "__main__":
     handler = logging.StreamHandler(sys.stdout)
     formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-    handler.setLevel(logging.INFO)
+    handler.setLevel(logging.DEBUG)
     handler.setFormatter(formatter)
     app.logger.addHandler(handler)
-    app.logger.setLevel(logging.INFO)
+    app.logger.setLevel(logging.DEBUG)
     socketio.run(app, debug=DEBUG)
