@@ -5,6 +5,7 @@ import json
 import random
 import os
 import logging
+import sys
 
 SECRET_KEY = os.environ.get('APP_SECRET_KEY', 'not-the-actual-key-in-prod')
 DEBUG = True if os.environ.get('DEBUG', False) else False
@@ -193,7 +194,7 @@ def star():
 
 
 if __name__ == "__main__":
-    handler = logging.StreamHandler()
+    handler = logging.StreamHandler(sys.stdout)
     formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
     handler.setLevel(logging.DEBUG)
     handler.setFormatter(formatter)
