@@ -4,8 +4,6 @@ from flask_cors import CORS
 import json
 import random
 import os
-import logging
-import sys
 
 SECRET_KEY = os.environ.get('APP_SECRET_KEY', 'not-the-actual-key-in-prod')
 DEBUG = True if os.environ.get('DEBUG', False) else False
@@ -56,7 +54,7 @@ def background_thread(data_src, ns, sid, cursor_start=5):
     for i, data in enumerate(data_src[cursor_start:], cursor_start):
         socketio.sleep(abs(local_rnd.gauss(4, 0.8)))
         socketio.emit('message', {'data': data, 'idx': i}, namespace=ns)
-        app.logger.info("emitting on ns: {} for client sid: {} - idx: {} id: {}".format(ns, sid, i, data['id']))
+        print "emitting on ns: {} for client sid: {} - idx: {} id: {}".format(ns, sid, i, data['id'])
 
 
 def start_stream(data_src, ns, sid, **kwargs):
@@ -68,7 +66,7 @@ def start_stream(data_src, ns, sid, **kwargs):
 class Travel(Namespace):
     def on_connect(self):
         emit('message', {'data': 'Connected: Travel sid: {}'.format(request.sid)})
-        app.logger.info("Serving client on websocket sid: {}".format(request.sid))
+        print "Serving client on websocket sid: {}".format(request.sid)
 
     def on_start(self, message):
         print "Travel - message: {}".format(message)
@@ -81,13 +79,13 @@ class Travel(Namespace):
         emit('message', {'data': 'Starting Stream: Travel'})
 
     def on_disconnect(self):
-        app.logger.info('Client disconnected sid: {}'.format(request.sid))
+        print 'Client disconnected sid: {}'.format(request.sid)
 
 
 class Reviews(Namespace):
     def on_connect(self):
         emit('message', {'data': 'Connected: Reviews sid: {}'.format(request.sid)})
-        app.logger.info("Serving client on websocket sid: {}".format(request.sid))
+        print "Serving client on websocket sid: {}".format(request.sid)
 
     def on_start(self, message):
         print "Reviews - message: {}".format(message)
@@ -100,13 +98,13 @@ class Reviews(Namespace):
         emit('message', {'data': 'Starting Stream: Reviews'})
 
     def on_disconnect(self):
-        app.logger.info('Client disconnected sid: {}'.format(request.sid))
+        print 'Client disconnected sid: {}'.format(request.sid)
 
 
 class Gifs(Namespace):
     def on_connect(self):
         emit('message', {'data': 'Connected: Gifs sid: {}'.format(request.sid)})
-        app.logger.info("Serving client on websocket sid: {}".format(request.sid))
+        print "Serving client on websocket sid: {}".format(request.sid)
 
     def on_start(self, message):
         print "Gifs - message: {}".format(message)
@@ -119,7 +117,7 @@ class Gifs(Namespace):
         emit('message', {'data': 'Starting Stream: Gifs'})
 
     def on_disconnect(self):
-        app.logger.info('Client disconnected sid: {}'.format(request.sid))
+        print 'Client disconnected sid: {}'.format(request.sid)
 
 
 # register websocket handlers with their respective Namespace classes
@@ -131,18 +129,18 @@ socketio.on_namespace(Gifs(gif_ns))
 @socketio.on('connect', namespace=keepalive_ns)
 def test_connect():
     emit('message', {'data': 'Connected: Keepalive sid: {}'.format(request.sid)})
-    app.logger.info("Serving client on websocket sid: {}".format(request.sid))
+    print "Serving client on websocket sid: {}".format(request.sid)
 
 
 @socketio.on('ping', namespace=keepalive_ns)
 def ping_pong():
     emit('pong')
-    app.logger.info("pong sid: {}".format(request.sid))
+    print "pong sid: {}".format(request.sid)
 
 
 @app.route('/', methods=['GET'])
 def index():
-    app.logger.info("Serving client on route /")
+    print "Serving client on route /"
     return render_template('test.html', async_mode=socketio.async_mode)
 
 
@@ -154,19 +152,19 @@ def websocket_ct():
     ns_dict["review_namespace"] = review_ns
     ns_dict["gif_namespace"] = gif_ns
     server = request.url_root
-    app.logger.info("Serving client on route /websocket_ct")
+    print "Serving client on route /websocket_ct"
     return jsonify(socket_server=server, namespaces=ns_dict)
 
 
 @app.route('/sync', methods=['GET'])
 def sync():
-    app.logger.info("Serving client on route /sync")
+    print "Serving client on route /sync"
     return jsonify(travel=travel_arr[:5], reviews=review_arr[:5], gifs=gif_arr[:5])
 
 
 @app.route('/star', methods=['POST'])
 def star():
-    app.logger.info("Serving client on route /star")
+    print "Serving client on route /star"
     data = request.get_json()
     if not data:
         return jsonify(errors='No data was supplied'), 400
@@ -194,10 +192,4 @@ def star():
 
 
 if __name__ == "__main__":
-    handler = logging.StreamHandler(sys.stdout)
-    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-    handler.setLevel(logging.DEBUG)
-    handler.setFormatter(formatter)
-    app.logger.addHandler(handler)
-    app.logger.setLevel(logging.DEBUG)
     socketio.run(app, debug=DEBUG)
