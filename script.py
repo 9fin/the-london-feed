@@ -15,7 +15,7 @@ async_mode = None
 app = Flask(__name__)
 CORS(app)
 app.config['SECRET_KEY'] = SECRET_KEY
-socketio = SocketIO(app, async_mode=async_mode, engineio_logger=True)
+socketio = SocketIO(app, async_mode=async_mode)
 
 # data arrays
 travel_arr = []
