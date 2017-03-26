@@ -74,10 +74,12 @@ def start_stream(data_src, ns, sid, **kwargs):
 
 def terminate_thread(sid):
     threads_to_kill = filter(lambda x: x[0] == sid and not x[2].is_set(), threads)
-    print threads_to_kill
-    print [x[2].is_set() for x in threads_to_kill]
-    map(lambda x: x[2].set(), threads_to_kill)
-    print [x[2].is_set() for x in threads_to_kill]
+    if threads_to_kill:
+        print "Delete threads", threads_to_kill
+        print [x[2].is_set() for x in threads_to_kill]
+        map(lambda x: x[2].set(), threads_to_kill)
+        print [x[2].is_set() for x in threads_to_kill]
+        map(lambda x: threads.remove(x), threads_to_kill)
 
 
 class Travel(Namespace):
