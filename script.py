@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO, Namespace, emit
 from flask_cors import CORS
+from threading import Event
 import json
 import random
 import os
@@ -48,19 +49,35 @@ review_ns = '/reviews'
 gif_ns = '/gifs'
 
 
-def background_thread(data_src, ns, sid, cursor_start=5):
+def background_thread(data_src, ns, sid, thread_stop, cursor_start=5):
+    if thread_stop.is_set():
+        print "Thread already stopped for sid: {}".format(sid)
+        return
+    print "Starting thread on ns: {} for client sid: {}".format(ns, sid)
     # calculate required sending rate of 4 msg/s with 20% sd
     local_rnd = random.Random()
     for i, data in enumerate(data_src[cursor_start:], cursor_start):
+        if thread_stop.is_set():
+            break
         socketio.sleep(abs(local_rnd.gauss(4, 0.8)))
         socketio.emit('message', {'data': data, 'idx': i}, namespace=ns)
         print "emitting on ns: {} for client sid: {} - idx: {} id: {}".format(ns, sid, i, data['id'])
+    print "Stopping thread on ns: {} for client sid: {}".format(ns, sid)
 
 
 def start_stream(data_src, ns, sid, **kwargs):
     global treads
-    thread = socketio.start_background_task(background_thread, data_src, ns, sid)
-    threads.append(thread)
+    thread_stop = Event()
+    thread = socketio.start_background_task(background_thread, data_src, ns, sid, thread_stop)
+    threads.append(tuple([sid, thread, thread_stop]))
+
+
+def terminate_thread(sid):
+    threads_to_kill = filter(lambda x: x[0] == sid and not x[2].is_set(), threads)
+    print threads_to_kill
+    print [x[2].is_set() for x in threads_to_kill]
+    map(lambda x: x[2].set(), threads_to_kill)
+    print [x[2].is_set() for x in threads_to_kill]
 
 
 class Travel(Namespace):
@@ -80,6 +97,7 @@ class Travel(Namespace):
 
     def on_disconnect(self):
         print 'Client disconnected sid: {}'.format(request.sid)
+        terminate_thread(request.sid)
 
 
 class Reviews(Namespace):
@@ -99,6 +117,7 @@ class Reviews(Namespace):
 
     def on_disconnect(self):
         print 'Client disconnected sid: {}'.format(request.sid)
+        terminate_thread(request.sid)
 
 
 class Gifs(Namespace):
@@ -118,6 +137,7 @@ class Gifs(Namespace):
 
     def on_disconnect(self):
         print 'Client disconnected sid: {}'.format(request.sid)
+        terminate_thread(request.sid)
 
 
 # register websocket handlers with their respective Namespace classes
@@ -160,6 +180,12 @@ def websocket_ct():
 def sync():
     print "Serving client on route /sync"
     return jsonify(travel=travel_arr[:5], reviews=review_arr[:5], gifs=gif_arr[:5])
+
+
+@app.route('/threads', methods=['GET'])
+def thread_check():
+    print "Serving client on route /threads"
+    return jsonify(threads=len(threads))
 
 
 @app.route('/star', methods=['POST'])
